@@ -10,29 +10,29 @@ const halyardTextLight = localFont({src: './HalyardText-Light.otf'})
 export default function Home() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const [url, setUrl] = React.useState<string>('');
+    const [logoFile, setLogoFile] = React.useState<FileList | null>(null);
     const [mainHeading, setMainHeading] = React.useState<string>('');
     const [subHeading, setSubHeading] = React.useState<string>('');
     const [image, setImage] = React.useState<FileList | null>(null);
 
     const verifyForm = useCallback(() => {
-        console.log({
-            url,
-            mainHeading,
-            subHeading,
-            image
-        })
-        if (!url || !mainHeading || !subHeading || !image) {
+        // either url or logoFile must be filled in
+        if ((url == null || url === '') && (logoFile == null || logoFile?.length === 0)) {
+            alert("Please fill either logo url or add a logo file");
+            return false;
+        }
+        if (!mainHeading || !subHeading || !image) {
             alert("Please fill in all fields");
             console.log(false);
             return false;
         }
-        if (url === '' || mainHeading === '' || subHeading === '' || image.length === 0) {
-            alert("Please fill in all fields");
+        if (mainHeading === '' || subHeading === '') {
+            alert("Please fill both heading and subheading");
             console.log(false);
             return false;
         }
         return true;
-    }, [url, mainHeading, subHeading, image]);
+    }, [url, mainHeading, subHeading, image, logoFile]);
 
     const drawBackground = useCallback(() => {
         const canvas = canvasRef.current!;
@@ -72,18 +72,11 @@ export default function Home() {
         const buttonText = "Book now";
         const textColor = "#444444";
         const buttonColor = "white";
-        const borderColor = "black";
         const buttonRadius = 21;
         ctx.fillStyle = buttonColor;
         ctx.letterSpacing = '2px'
         drawRoundedRect(ctx, buttonX, buttonY, buttonWidth, buttonHeight, buttonRadius);
         ctx.fill();
-
-        // Draw button border
-        ctx.strokeStyle = borderColor;
-        ctx.lineWidth = 1;
-        drawRoundedRect(ctx, buttonX, buttonY, buttonWidth, buttonHeight, buttonRadius);
-        ctx.stroke();
 
         // Draw button text
         ctx.fillStyle = textColor;
@@ -129,6 +122,9 @@ export default function Home() {
     }, [mainHeading, drawSubHeading])
 
     const drawBottomImage = useCallback(() => {
+        if (image == null || image.length === 0) {
+            return;
+        }
         const reader = new FileReader();
         reader.readAsDataURL(image![0]);
         reader.onload = (ev) => {
@@ -153,19 +149,31 @@ export default function Home() {
         ctx.globalCompositeOperation = "source-over";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         // Implement your preview logic here
-        const logoPath = `/api/logo?url=${encodeURIComponent(url)}`
-        const logo = new Image();
-        logo.src = logoPath;
-        logo.onload = () => {
-            const canvas = canvasRef.current!;
-            const context = canvas.getContext('2d')!;
-            context.globalCompositeOperation = "source-over";
-            context.drawImage(logo, 78, 78, 2*logo.width, 2*logo.height);
-        };
+        if (logoFile != null && logoFile.length > 0) {
+            const url = URL.createObjectURL(logoFile[0]);
+            const logo = new Image();
+            logo.src = url;
+            logo.onload = () => {
+                const canvas = canvasRef.current!;
+                const context = canvas.getContext('2d')!;
+                context.globalCompositeOperation = "source-over";
+                context.drawImage(logo, 78, 78, 2*logo.width, 2*logo.height);
+            };
+        } else {
+            const logoPath = `/api/logo?url=${encodeURIComponent(url)}`
+            const logo = new Image();
+            logo.src = logoPath;
+            logo.onload = () => {
+                const canvas = canvasRef.current!;
+                const context = canvas.getContext('2d')!;
+                context.globalCompositeOperation = "source-over";
+                context.drawImage(logo, 78, 78, 2*logo.width, 2*logo.height);
+            };
+        }
         requestAnimationFrame(drawBackground)
         requestAnimationFrame(drawMainHeading)
         requestAnimationFrame(drawBottomImage)
-    }, [url, verifyForm, drawBackground, drawMainHeading, drawBottomImage]);
+    }, [url, verifyForm, drawBackground, drawMainHeading, drawBottomImage, logoFile]);
 
     const handleDownload = () => {
         const canvas = canvasRef.current!;
@@ -180,10 +188,22 @@ export default function Home() {
         <div className="flex flex-col md:flex-row h-screen bg-black text-white">
             <div className="w-full md:w-1/3 p-4 bg-gray-900 flex flex-col gap-4">
                 <div>
-                    <label htmlFor="url" className="block text-sm font-medium text-gray-300">URL</label>
+                    <label htmlFor="url" className="block text-sm font-medium text-gray-300">Logo URL (Auto extracted)</label>
                     <input value={url} onChange={e => setUrl(e.target.value)} type="text" id="url"
                            className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded"
                            placeholder="Enter URL"/>
+                </div>
+                <div className="flex justify-center">
+                    <div >
+                        OR
+                    </div>
+                </div>
+                <div>
+                    <label htmlFor="logo-file" className="block text-sm font-medium text-gray-300">Upload
+                        Logo (Takes precedence over URL)</label>
+                    <input type="file" id="logo-file"
+                           className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded"
+                           onChange={e => setLogoFile(e.target.files)} accept="image/*"/>
                 </div>
                 <div>
                     <label htmlFor="main-heading" className="block text-sm font-medium text-gray-300">Main
@@ -203,8 +223,10 @@ export default function Home() {
                            placeholder="Sub Heading"/>
                 </div>
                 <div>
-                    <label htmlFor="image-upload" className="block text-sm font-medium text-gray-300">Logo</label>
-                    <input type="file" id="image-upload" onChange={e => setImage(e.target.files)} className="mt-1 block w-full text-gray-400" accept="image/*"/>
+                    <label htmlFor="image-upload" className="block text-sm font-medium text-gray-300">Bottom
+                        Image</label>
+                    <input type="file" id="image-upload" onChange={e => setImage(e.target.files)}
+                           className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded" accept="image/*"/>
                 </div>
                 <div className="flex gap-2">
                     <button onClick={handlePreview}
