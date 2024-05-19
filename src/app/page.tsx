@@ -21,7 +21,7 @@ export default function Home() {
             alert("Please fill either logo url or add a logo file");
             return false;
         }
-        if (!mainHeading || !subHeading || !image) {
+        if (!mainHeading || !subHeading) {
             alert("Please fill in all fields");
             console.log(false);
             return false;
@@ -32,7 +32,7 @@ export default function Home() {
             return false;
         }
         return true;
-    }, [url, mainHeading, subHeading, image, logoFile]);
+    }, [url, mainHeading, subHeading, logoFile]);
 
     const drawBackground = useCallback(() => {
         const canvas = canvasRef.current!;
