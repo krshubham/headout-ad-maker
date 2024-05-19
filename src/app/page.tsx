@@ -1,113 +1,224 @@
-import Image from "next/image";
+"use client"
+
+import React, {useCallback, useRef} from 'react';
+import localFont from 'next/font/local'
+
+const halyardDisplayRegular = localFont({src: './HalyardDisplay-Regular.otf'})
+const halyardDisplayMedium = localFont({src: './HalyardDisplay-Medium.otf'})
+const halyardTextLight = localFont({src: './HalyardText-Light.otf'})
 
 export default function Home() {
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const [url, setUrl] = React.useState<string>('');
+    const [mainHeading, setMainHeading] = React.useState<string>('');
+    const [subHeading, setSubHeading] = React.useState<string>('');
+    const [image, setImage] = React.useState<FileList | null>(null);
+
+    const verifyForm = useCallback(() => {
+        console.log({
+            url,
+            mainHeading,
+            subHeading,
+            image
+        })
+        if (!url || !mainHeading || !subHeading || !image) {
+            alert("Please fill in all fields");
+            console.log(false);
+            return false;
+        }
+        if (url === '' || mainHeading === '' || subHeading === '' || image.length === 0) {
+            alert("Please fill in all fields");
+            console.log(false);
+            return false;
+        }
+        return true;
+    }, [url, mainHeading, subHeading, image]);
+
+    const drawBackground = useCallback(() => {
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext('2d')!;
+        ctx.globalCompositeOperation = "destination-over"
+        const gradient = ctx.createLinearGradient(-1, -1, canvas.width, canvas.height);
+        gradient.addColorStop(0, '#8C2DEC');  // Start color
+        gradient.addColorStop(1, '#5602AA');  // End color
+
+        ctx.rect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = gradient;
+        ctx.fill()
+    }, []);
+
+    const drawRoundedRect = useCallback((ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) => {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    }, []);
+
+    const drawButton = useCallback((fromTop: number) => {
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext('2d')!;
+        ctx.save();
+        const buttonX = 78;
+        const buttonY = fromTop + 100;
+        const buttonWidth = 322;
+        const buttonHeight = 122;
+        const buttonText = "Book now";
+        const textColor = "#444444";
+        const buttonColor = "white";
+        const borderColor = "black";
+        const buttonRadius = 21;
+        ctx.fillStyle = buttonColor;
+        ctx.letterSpacing = '2px'
+        drawRoundedRect(ctx, buttonX, buttonY, buttonWidth, buttonHeight, buttonRadius);
+        ctx.fill();
+
+        // Draw button border
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 1;
+        drawRoundedRect(ctx, buttonX, buttonY, buttonWidth, buttonHeight, buttonRadius);
+        ctx.stroke();
+
+        // Draw button text
+        ctx.fillStyle = textColor;
+        ctx.font = `50px ${halyardDisplayRegular.style.fontFamily}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(buttonText, buttonX + buttonWidth / 2, buttonY + buttonHeight / 2);
+        ctx.restore()
+    }, [drawRoundedRect])
+
+    const drawSubHeading = useCallback((fromTop: number) => {
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext('2d')!;
+        ctx.globalCompositeOperation = "source-over";
+        const lines = subHeading.split('\n')
+        ctx.font = `300 48px ${halyardTextLight.style.fontFamily}`
+        ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+        ctx.letterSpacing = '-0.6px'
+        const lineHeight = 58;
+        let index = 0;
+        for(const line of lines) {
+            ctx.fillText(line, 78, fromTop + (index * lineHeight));
+            index++;
+        }
+        drawButton((index-1) * lineHeight + fromTop)
+    }, [subHeading, drawButton]);
+
+    const drawMainHeading = useCallback(() => {
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext('2d')!;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.font = `92px ${halyardDisplayMedium.style.fontFamily}`
+        ctx.fillStyle = "#fff";
+        ctx.letterSpacing = '0.8px'
+        let lines = mainHeading.split('\n')
+        let lineHeight = 104;
+        let index = 0;
+        for(const line of lines) {
+            ctx.fillText(line, 78, 320 + (index * lineHeight));
+            index++;
+        }
+        drawSubHeading((index-1) * lineHeight + 400)
+    }, [mainHeading, drawSubHeading])
+
+    const drawBottomImage = useCallback(() => {
+        const reader = new FileReader();
+        reader.readAsDataURL(image![0]);
+        reader.onload = (ev) => {
+            const canvas = canvasRef.current!;
+            const ctx = canvas.getContext('2d')!;
+            const img = new Image();
+            img.onload = function(){
+                const x = canvas.width - img.width;
+                const y = canvas.height - img.height;
+                ctx.drawImage(img, x, y);
+            }
+            img.src = ev.target!.result as string;
+        }
+    }, [image]);
+
+    const handlePreview = useCallback(async () => {
+        if (!verifyForm()) {
+            return;
+        }
+        const canvas = canvasRef.current!;
+        const ctx = canvas.getContext('2d')!;
+        ctx.globalCompositeOperation = "source-over";
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Implement your preview logic here
+        const logoPath = `/api/logo?url=${encodeURIComponent(url)}`
+        const logo = new Image();
+        logo.src = logoPath;
+        logo.onload = () => {
+            const canvas = canvasRef.current!;
+            const context = canvas.getContext('2d')!;
+            context.globalCompositeOperation = "source-over";
+            context.drawImage(logo, 78, 78, 2*logo.width, 2*logo.height);
+        };
+        requestAnimationFrame(drawBackground)
+        requestAnimationFrame(drawMainHeading)
+        requestAnimationFrame(drawBottomImage)
+    }, [url, verifyForm, drawBackground, drawMainHeading, drawBottomImage]);
+
+    const handleDownload = () => {
+        const canvas = canvasRef.current!;
+        const url = canvas!.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'headout-ad.png';
+        link.click();
+    };
+
+    return (
+        <div className="flex flex-col md:flex-row h-screen bg-black text-white">
+            <div className="w-full md:w-1/3 p-4 bg-gray-900 flex flex-col gap-4">
+                <div>
+                    <label htmlFor="url" className="block text-sm font-medium text-gray-300">URL</label>
+                    <input value={url} onChange={e => setUrl(e.target.value)} type="text" id="url"
+                           className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded"
+                           placeholder="Enter URL"/>
+                </div>
+                <div>
+                    <label htmlFor="main-heading" className="block text-sm font-medium text-gray-300">Main
+                        Heading</label>
+                    <textarea id="main-heading"
+                              value={mainHeading}
+                              onChange={e => setMainHeading(e.target.value)}
+                              className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded"
+                              placeholder="Main Heading"></textarea>
+                </div>
+                <div>
+                    <label htmlFor="sub-heading" className="block text-sm font-medium text-gray-300">Sub Heading</label>
+                    <input type="text" id="sub-heading"
+                           value={subHeading}
+                           onChange={e => setSubHeading(e.target.value)}
+                           className="mt-1 block w-full p-2 bg-gray-800 border border-gray-700 rounded"
+                           placeholder="Sub Heading"/>
+                </div>
+                <div>
+                    <label htmlFor="image-upload" className="block text-sm font-medium text-gray-300">Logo</label>
+                    <input type="file" id="image-upload" onChange={e => setImage(e.target.files)} className="mt-1 block w-full text-gray-400" accept="image/*"/>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={handlePreview}
+                            className="w-full py-2 bg-green-600 hover:bg-green-500 rounded">Preview
+                    </button>
+                    <button onClick={handleDownload}
+                            className="w-full py-2 bg-blue-600 hover:bg-blue-500 rounded">Download
+                    </button>
+                </div>
+            </div>
+            <div className="w-full md:w-2/3 flex justify-center items-center bg-gray-800 p-4">
+                <canvas ref={canvasRef} width="1200" height="1200"
+                        className="max-w-full max-h-full border-2 border-green-600"></canvas>
+            </div>
         </div>
-      </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+    );
 }
