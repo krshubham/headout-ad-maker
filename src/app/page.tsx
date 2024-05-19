@@ -187,6 +187,7 @@ export default function Home() {
     return (
         <div className="flex flex-col md:flex-row h-screen bg-black text-white">
             <div className="w-full md:w-1/3 p-4 bg-gray-900 flex flex-col gap-4">
+                <h1 className="text-3xl font-bold">Headout Ad Creator</h1>
                 <div>
                     <label htmlFor="url" className="block text-sm font-medium text-gray-300">Logo URL (Auto extracted)</label>
                     <input value={url} onChange={e => setUrl(e.target.value)} type="text" id="url"
