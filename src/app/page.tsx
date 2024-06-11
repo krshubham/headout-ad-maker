@@ -29,7 +29,7 @@ export default function Home() {
         width: 1200,
         height: 1200,
         byHeadoutLogoConfig: {
-            distanceFromLeft: 200,
+            distanceFromLeft: 20,
             scaleX: 0.5,
             scaleY: 0.5
         },
@@ -63,9 +63,9 @@ export default function Home() {
         width: 1200,
         height: 628,
         byHeadoutLogoConfig: {
-            distanceFromLeft: 120,
-            scaleX: 0.3,
-            scaleY: 0.3
+            distanceFromLeft: 10,
+            scaleX: 0.23,
+            scaleY: 0.23
         },
         config: {
             logoConfig: {
@@ -97,7 +97,7 @@ export default function Home() {
         width: 1080,
         height: 1920,
         byHeadoutLogoConfig: {
-            distanceFromLeft: 195,
+            distanceFromLeft: 20,
             scaleX: 0.5,
             scaleY: 0.5
         },
@@ -284,15 +284,23 @@ export default function Home() {
                 const context = canvas.getContext('2d')!;
                 context.globalCompositeOperation = "source-over";
                 context.drawImage(logo, adSizes[adSize].config.logoConfig.distanceFromLeft, adSizes[adSize].config.logoConfig.distanceFromTop, adSizes[adSize].config.logoConfig.scaleX * logo.width, adSizes[adSize].config.logoConfig.scaleY * logo.height);
+                const byHeadoutLogo = new Image();
+                byHeadoutLogo.src = "/hog.png";
+                byHeadoutLogo.onload = () => {
+                    const canvas = canvasRef.current!;
+                    const context = canvas.getContext('2d')!;
+                    context.globalCompositeOperation = "source-over";
+                    context.drawImage(byHeadoutLogo, logo.width*adSizes[adSize].config.logoConfig.scaleX + adSizes[adSize].config.logoConfig.distanceFromLeft + adSizes[adSize].byHeadoutLogoConfig.distanceFromLeft, adSizes[adSize].config.logoConfig.distanceFromTop, byHeadoutLogo.width * adSizes[adSize].byHeadoutLogoConfig.scaleX,byHeadoutLogo.height*adSizes[adSize].byHeadoutLogoConfig.scaleY);
+                };
             };
-            const byHeadoutLogo = new Image();
-            byHeadoutLogo.src = "/hog.png";
-            byHeadoutLogo.onload = () => {
-                const canvas = canvasRef.current!;
-                const context = canvas.getContext('2d')!;
-                context.globalCompositeOperation = "source-over";
-                context.drawImage(byHeadoutLogo, adSizes[adSize].byHeadoutLogoConfig.distanceFromLeft + adSizes[adSize].byHeadoutLogoConfig.distanceFromLeft, adSizes[adSize].config.logoConfig.distanceFromTop, byHeadoutLogo.width * adSizes[adSize].byHeadoutLogoConfig.scaleX,byHeadoutLogo.height*adSizes[adSize].byHeadoutLogoConfig.scaleY);
-            };
+            // const byHeadoutLogo = new Image();
+            // byHeadoutLogo.src = "/hog.png";
+            // byHeadoutLogo.onload = () => {
+            //     const canvas = canvasRef.current!;
+            //     const context = canvas.getContext('2d')!;
+            //     context.globalCompositeOperation = "source-over";
+            //     context.drawImage(byHeadoutLogo, adSizes[adSize].byHeadoutLogoConfig.distanceFromLeft + adSizes[adSize].byHeadoutLogoConfig.distanceFromLeft, adSizes[adSize].config.logoConfig.distanceFromTop, byHeadoutLogo.width * adSizes[adSize].byHeadoutLogoConfig.scaleX,byHeadoutLogo.height*adSizes[adSize].byHeadoutLogoConfig.scaleY);
+            // };
         }
         requestAnimationFrame(drawBackground)
         requestAnimationFrame(drawMainHeading)
